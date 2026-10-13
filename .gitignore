@@ -1,0 +1,31 @@
+# Archivos de disco y máquinas virtuales
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+*.qcow2
+*.img
+*.iso
+
+# Paquetes de código fuente
+*.tar
+*.tar.gz
+*.tar.xz
+*.tar.bz2
+*.tgz
+*.tbz2
+
+# Credenciales y claves privadas
+*.pem
+*.key
+id_rsa
+id_ed25519
+.env
+.env.*
+*.p12
+*.pfx
+
+# Archivos temporales
+*.tmp
+*.swp
+*~

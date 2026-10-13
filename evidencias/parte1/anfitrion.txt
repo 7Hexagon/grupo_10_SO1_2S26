@@ -1,0 +1,76 @@
+NAME="Rocky Linux"
+VERSION="10.2 (Red Quartz)"
+RELEASE_TYPE="stable"
+ID="rocky"
+ID_LIKE="rhel centos fedora"
+VERSION_ID="10.2"
+PLATFORM_ID="platform:el10"
+PRETTY_NAME="Rocky Linux 10.2 (Red Quartz)"
+ANSI_COLOR="0;32"
+LOGO="fedora-logo-icon"
+CPE_NAME="cpe:/o:rocky:rocky:10::baseos"
+HOME_URL="https://rockylinux.org/"
+VENDOR_NAME="RESF"
+VENDOR_URL="https://resf.org/"
+BUG_REPORT_URL="https://bugs.rockylinux.org/"
+SUPPORT_END="2035-05-31"
+ROCKY_SUPPORT_PRODUCT="Rocky-Linux-10"
+ROCKY_SUPPORT_PRODUCT_VERSION="10.2"
+REDHAT_SUPPORT_PRODUCT="Rocky Linux"
+REDHAT_SUPPORT_PRODUCT_VERSION="10.2"
+6.12.0-211.64.1.el10_2.x86_64
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           42 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  4
+On-line CPU(s) list:                     0-3
+Vendor ID:                               GenuineIntel
+Model name:                              Intel(R) Core(TM) Ultra 7 255H
+CPU family:                              6
+Model:                                   197
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+Stepping:                                2
+BogoMIPS:                                7372.80
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ibrs_enhanced fsgsbase bmi1 avx2 bmi2 invpcid rdseed adx clflushopt sha_ni arat md_clear flush_l1d arch_capabilities
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+L1d cache:                               128 KiB (4 instances)
+L1i cache:                               256 KiB (4 instances)
+L2 cache:                                16 MiB (4 instances)
+L3 cache:                                96 MiB (4 instances)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-3
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Indirect target selection: Mitigation; Aligned branch/return thunks
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Mitigation; Enhanced IBRS
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Vulnerable
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+               total        used        free      shared  buff/cache   available
+Mem:           7.5Gi       469Mi       7.1Gi       8.6Mi       197Mi       7.0Gi
+Swap:          2.5Gi          0B       2.5Gi
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/rlm-root   21G  2.7G   18G  13% /
+devtmpfs              3.8G     0  3.8G   0% /dev
+tmpfs                 3.8G     0  3.8G   0% /dev/shm
+tmpfs                 1.5G  8.6M  1.5G   1% /run
+tmpfs                 1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+/dev/sda2             2.0G  482M  1.5G  25% /boot
+/dev/sdb1              30G   24K   28G   1% /mnt/lfs
+tmpfs                 1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
+tmpfs                 768M  4.0K  768M   1% /run/user/1000

@@ -1,0 +1,16 @@
+NAME         FSTYPE      FSVER    LABEL UUID                                   FSAVAIL FSUSE% MOUNTPOINTS
+sda                                                                                           
+├─sda1                                                                                        
+├─sda2       xfs                        e5c505ba-2f56-46a4-8bfa-6a5ef13d171c      1.5G    24% /boot
+└─sda3       LVM2_member LVM2 001       g45SnQ-o1tG-eCfy-2tMc-NtDi-QJpO-3Pw2dd                
+  ├─rlm-root xfs                        7cecccd8-990a-4cce-bc13-14a6894b29fe     17.8G    13% /
+  └─rlm-swap swap        1              152a7b90-b0d9-46cb-a3cf-18a57c144942                  [SWAP]
+sdb                                                                                           
+└─sdb1       ext4        1.0      LFS   73dc87ee-e227-4f48-939f-67f81f6556d3     27.8G     0% /mnt/lfs
+sr0                                                                                           
+TARGET   SOURCE    FSTYPE OPTIONS
+/mnt/lfs /dev/sdb1 ext4   rw,relatime,seclabel
+LFS=/mnt/lfs
+0022
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdb1        30G   24K   28G   1% /mnt/lfs
