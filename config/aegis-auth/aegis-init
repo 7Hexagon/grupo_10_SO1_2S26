@@ -1,0 +1,33 @@
+#!/bin/bash
+# Temporary console init for an independent first boot.
+export PATH=/usr/bin:/usr/sbin:/bin:/sbin
+mount -t proc proc /proc || { echo 'Cannot mount proc; boot stopped' >/dev/console; while :; do sleep 60; done; }
+mount -t sysfs sysfs /sys || echo 'Cannot mount sysfs' >/dev/console
+if ! mountpoint -q /dev; then mount -t devtmpfs devtmpfs /dev || echo 'Cannot mount devtmpfs' >/dev/console; fi
+if ! mountpoint -q /run; then mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run || echo 'Cannot mount run' >/dev/console; fi
+hostname aegis-auth || echo 'Cannot set hostname' >/dev/console
+# Host-only network and key-only SSH; failures leave the console available.
+/usr/sbin/ifconfig lo 127.0.0.1 up || echo 'Cannot enable loopback' >/dev/console
+if [[ ! -d /dev/pts ]]; then mkdir -m 0755 /dev/pts || echo 'Cannot create devpts directory' >/dev/console; fi
+if [[ -d /dev/pts ]] && ! mountpoint -q /dev/pts; then
+  mount -t devpts -o mode=0620,ptmxmode=0666 devpts /dev/pts || echo 'Cannot mount devpts' >/dev/console
+fi
+for attempt in {1..10}; do [[ -d /sys/class/net/eth0 ]] && break; sleep 1; done
+if [[ -d /sys/class/net/eth0 ]] && /usr/sbin/ifconfig eth0 192.168.56.110 netmask 255.255.255.0 up; then
+  if mountpoint -q /dev/pts && [[ -x /usr/sbin/dropbear && -f /etc/dropbear/dropbear_ed25519_host_key ]]; then
+    /usr/sbin/dropbear -F -E -s -j -k -p 192.168.56.110:22 -r /etc/dropbear/dropbear_ed25519_host_key </dev/null >>/var/log/aegis-dropbear.log 2>&1 &
+  else
+    echo 'Dropbear or devpts unavailable; console remains available' >/dev/console
+  fi
+else
+  echo 'Host-only network unavailable; console remains available' >/dev/console
+fi
+# Servicio local de autenticacion; la consola sigue disponible si falla.
+if [[ -x /usr/sbin/aegisd ]]; then
+  /usr/sbin/aegisd </dev/null >>/var/log/aegisd-service.log 2>&1 &
+fi
+trap ':' HUP INT TERM
+while :; do
+  /usr/bin/setsid --ctty --wait /usr/sbin/agetty --autologin root --noclear 38400 tty1 linux </dev/tty1 >/dev/tty1 2>&1
+  sleep 2
+done

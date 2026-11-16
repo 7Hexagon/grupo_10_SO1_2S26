@@ -1,0 +1,20 @@
+#!/bin/bash
+export PATH=/usr/bin:/usr/sbin:/bin:/sbin
+log=/var/log/aegis-dropbear.log
+echo 'Aegis Auth - seguridad SSH'
+running=no
+for f in /proc/[0-9]*/cmdline; do
+  [[ -r $f ]] || continue
+  args=$(tr '\0' ' ' < "$f" 2>/dev/null) || continue
+  case "$args" in
+    '/usr/sbin/dropbear -F -E -s -j -k -p 192.168.56.110:22 -r /etc/dropbear/dropbear_ed25519_host_key ') running=si; break ;;
+  esac
+done
+echo "Servidor Dropbear: $running"
+echo 'Accesos registrados (hora del sistema; sin anio):'
+if [[ ! -r $log ]]; then echo 'Registro no disponible'; exit 1; fi
+awk '
+/Pubkey auth succeeded/ { print "EXITO: " $0; next }
+/[bB]ad password|[bB]ad pubkey|[aA]uthentication failure|[fF]ailed auth|[uU]ser .*does not exist/ { print "FALLO: " $0; next }
+/Exit before auth/ { print "SIN AUTENTICAR: " $0 }
+' "$log"

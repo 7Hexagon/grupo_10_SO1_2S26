@@ -16,3 +16,30 @@
 | 2026-11-03 | Construir el compilador cruzado (cap. 5) | Lucas Heidebrecht | Compilar dentro de tmux para que un corte de SSH no detenga la compilación; guardar logs con tee | — | — | binutils 2.47 y GCC 16.2.0 (paso 1), cabeceras de Linux 7.1.8, glibc 2.44 y libstdc++ instalados; prueba del compilador OK (intérprete /lib64/ld-linux-x86-64.so.2; Scrt1.o, crti.o y crtn.o succeeded) | evidencias/parte1/logs/ |
 | 2026-11-03 | Compilar herramientas temporales (cap. 6) | Lucas Heidebrecht | Agrupar paquetes con bash -e para detenerse en el primer error | El configure de Diffutils falló: cannot run test program while cross compiling (prueba de strcasecmp) | Agregar gl_cv_func_strcasecmp_works=y al configure | 17 herramientas temporales instaladas, de M4 a GCC paso 2 | evidencias/parte1/logs/ |
 | 2026-11-04 | Ingresar al chroot (cap. 7.2 a 7.4) y cerrar el Bloque 1 | Lucas Heidebrecht | Pasar los archivos a root, montar los sistemas virtuales y entrar al chroot; documentar el reingreso porque los montajes no sobreviven a un reinicio | — | — | Prompt (lfs chroot) accesible; snapshot 02-toolchain-chroot-ok; traspaso a Juan Rojas desde la sección 7.5 | evidencias/parte1/chroot-ok.png, evidencias/parte1/snapshot-02.png, planificacion/bloque1-traspaso.md |
+
+## Continuación del bloque 2 — fechas anteriores al 16/11 pendientes de precisión
+
+**Participantes:** no se atribuyen ejecutores individuales en los hitos sin registro suficiente. La preparación inicial de Rocky y la toolchain figura en las entradas anteriores.
+
+- Se continuó la construcción de LFS en chroot. GCC 16.2.0 y Ncurses terminaron; Sed requirió recuperar permisos públicos de directorios y archivos creados con umask restrictiva. Se conservaron los árboles y registros y se recuperaron los paquetes sin repetir GCC ni Ncurses. Posteriormente avanzaron las instalaciones hasta 8.52.
+- Less se recuperó tras una comprobación posterior a la instalación; Perl 5.44.0 se instaló después de repetir con éxito las tres pruebas de Time::HiRes que habían fallado en la suite extensa. No se repitió la suite completa.
+- En 8.53, mpdecimal quedó en `failed:1` porque el script encontró bibliotecas ya presentes. Existían antecedentes de instalación temporal y pruebas básicas de C y C++; la documentación ausente no demostraba por sí sola una instalación defectuosa. No se registró artificialmente como instalado por el ejecutor.
+- Hubo una interrupción del arranque de Rocky y después se recuperó el acceso. La causa de ese fallo no quedó confirmada. Ante la fecha de entrega y la aclaración del profesor, se priorizó un sistema mínimo arrancable, sin afirmar que el capítulo 8 estuviera completo.
+
+## 2026-11-16 — primer arranque independiente
+
+**Participantes:** trabajo de construcción y verificación con asistencia de Codex; no se atribuyen pasos individuales sin evidencia adicional.
+
+Se compiló el kernel Linux 7.1.8 y se prepararon un init provisional, `fstab` y un medio auxiliar de GRUB. Se clonó el disco LFS para la VM de demostración, manteniéndolo separado de Rocky y de la cadena original de snapshots. La VM arrancó con raíz ext4 propia y llegó a Bash; se comprobaron kernel y sistema de archivos. La captura `evidencias/parte1/arranque-aegis/primer-arranque-consola.png` corresponde a ese primer arranque: todavía muestra las advertencias de control de trabajos.
+
+Para conservar una demostración utilizable se configuró el autologin local de root. Después se ajustó la ejecución de agetty con una sesión y terminal de control; se informó la comprobación de `monitor on`. Se configuraron el hostname y `os-release` con la identidad Aegis Auth. Quedan por adjuntar capturas de la consola después de la corrección y de los comandos de identidad.
+
+## 2026-11-16 — red, SSH y prototipo de autenticación
+
+**Participantes:** implementación asistida por Codex y comprobaciones informadas en la sesión; la asignación prevista del bloque 3 a Lucas no implica atribuirle estas implementaciones. Su revisión y continuación quedan pendientes.
+
+Se configuró una interfaz host-only con IP `192.168.56.110/24`; desde Windows se informó una prueba con cuatro respuestas y sin pérdida. Se compiló e instaló Dropbear; durante la preparación se atendieron problemas de `/dev/fd` y archivos temporales. Se comprobó una conexión SSH con clave ED25519 y se integraron la red y Dropbear al init provisional.
+
+Se añadió `aegis-status` y un registro privado de conexiones. Una clave no autorizada fue rechazada; Dropbear registró el evento como cierre antes de autenticarse, por lo que no se clasifica automáticamente como fallo. La escritura persistente se preparó, pero falta verificarla tras reiniciar.
+
+Se implementaron en C con libcrypto `aegisd` y `aegisctl`, con usuarios de laboratorio, contraseñas derivadas, roles, credenciales temporales, validación y revocación. En una instancia aislada se probaron contraseña incorrecta, operación permitida, revocación denegada al operador, revocación por administrador y vencimiento con duración reducida. La instancia instalada conserva cinco minutos de vigencia y socket local root. Se preparó su inicio desde el init, sin reiniciar para verificarlo; la interfaz de red propia, los permisos completos y la revisión de seguridad siguen pendientes. No se incorporan usuarios, hashes, claves ni credenciales al repositorio.
