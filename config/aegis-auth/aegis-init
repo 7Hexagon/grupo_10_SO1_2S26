@@ -15,7 +15,7 @@ fi
 for attempt in {1..10}; do [[ -d /sys/class/net/eth0 ]] && break; sleep 1; done
 if [[ -d /sys/class/net/eth0 ]] && /usr/sbin/ifconfig eth0 192.168.56.110 netmask 255.255.255.0 up; then
   if mountpoint -q /dev/pts && [[ -x /usr/sbin/dropbear && -f /etc/dropbear/dropbear_ed25519_host_key ]]; then
-    /usr/sbin/dropbear -F -E -s -j -k -p 192.168.56.110:22 -r /etc/dropbear/dropbear_ed25519_host_key </dev/null >>/var/log/aegis-dropbear.log 2>&1 &
+    /usr/sbin/dropbear -F -E -s -j -k -w -p 192.168.56.110:22 -r /etc/dropbear/dropbear_ed25519_host_key </dev/null >>/var/log/aegis-dropbear.log 2>&1 &
   else
     echo 'Dropbear or devpts unavailable; console remains available' >/dev/console
   fi

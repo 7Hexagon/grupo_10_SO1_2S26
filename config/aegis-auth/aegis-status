@@ -7,7 +7,7 @@ for f in /proc/[0-9]*/cmdline; do
   [[ -r $f ]] || continue
   args=$(tr '\0' ' ' < "$f" 2>/dev/null) || continue
   case "$args" in
-    '/usr/sbin/dropbear -F -E -s -j -k -p 192.168.56.110:22 -r /etc/dropbear/dropbear_ed25519_host_key ') running=si; break ;;
+    '/usr/sbin/dropbear -F -E -s -j -k -w -p 192.168.56.110:22 -r /etc/dropbear/dropbear_ed25519_host_key ') running=si; break ;;
   esac
 done
 echo "Servidor Dropbear: $running"
