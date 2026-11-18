@@ -1,0 +1,372 @@
+#!/bin/bash
+# aegis-audit — auditoría de seguridad de Aegis Auth (Grupo 10, SO1 2026)
+#
+# Comprueba 8 controles (6 del catálogo + 2 propios) y genera un informe
+# con PASS / FAIL / WARN. SOLO LEE: no modifica ningún archivo del sistema.
+# Lo único que escribe es el informe, en el directorio indicado con -o.
+#
+# Uso:   aegis-audit [-o DIRECTORIO] [-q]
+#   -o DIR  directorio donde guardar el informe (por defecto: el actual)
+#   -q      no mostrar el informe en pantalla, solo guardarlo
+#
+# Códigos de salida: 0 = ningún FAIL, 1 = hay al menos un FAIL, 2 = error de uso.
+#
+# Estados:
+#   PASS  hay evidencia de que el control se cumple
+#   FAIL  hay evidencia de que el control NO se cumple
+#   WARN  no se puede concluir (falta un archivo, un permiso o una dependencia)
+
+VERSION="1.1"
+
+# ---- Configuración ----------------------------------------------------------
+# RAIZ permite auditar un árbol de archivos de prueba (por ejemplo, RAIZ=/tmp/x).
+# En uso normal queda vacía y se audita el sistema real.
+RAIZ="${RAIZ:-}"
+PROC="${PROC:-/proc}"
+
+# Puertos TCP autorizados: "IP:PUERTO:proceso"
+PUERTOS_AUTORIZADOS="${PUERTOS_AUTORIZADOS:-192.168.56.110:22:dropbear}"
+
+# Datos del servicio aegisd (deben coincidir con src/aegisd/aegisd.c)
+AEGIS_DIR="$RAIZ/var/lib/aegisd"
+AEGIS_USUARIOS="$AEGIS_DIR/users"
+AEGIS_LOG="$RAIZ/var/log/aegisd.log"
+AEGIS_DUENO="${AEGIS_DUENO:-root}"     # aegisd corre como root en el prototipo
+
+# ---- Opciones ---------------------------------------------------------------
+dir_salida="."
+silencioso=0
+while getopts "o:qh" opcion; do
+  case "$opcion" in
+    o) dir_salida="$OPTARG" ;;
+    q) silencioso=1 ;;
+    h) sed -n '2,18p' "$0"; exit 0 ;;
+    *) echo "Uso: $0 [-o DIRECTORIO] [-q]" >&2; exit 2 ;;
+  esac
+done
+if [[ ! -d "$dir_salida" || ! -w "$dir_salida" ]]; then
+  echo "No se puede escribir el informe en: $dir_salida" >&2
+  exit 2
+fi
+
+LC_ALL=C
+export LC_ALL
+
+host=$(cat "$PROC/sys/kernel/hostname" 2>/dev/null || hostname 2>/dev/null || echo desconocido)
+fecha=$(date '+%Y-%m-%d %H:%M:%S %z')
+marca=$(date '+%Y%m%d-%H%M%S')
+informe="$dir_salida/aegis-audit-$host-$marca.txt"
+es_root=0; [[ $(id -u) -eq 0 ]] && es_root=1
+
+total_pass=0; total_fail=0; total_warn=0
+salida=""
+
+# ---- Funciones auxiliares ---------------------------------------------------
+
+# Registra el resultado de un control.
+# resultado ID NOMBRE ESTADO EVIDENCIA EXPLICACION
+resultado() {
+  local id="$1" nombre="$2" estado="$3" evidencia="$4" explicacion="$5"
+  case "$estado" in
+    PASS) total_pass=$((total_pass + 1)) ;;
+    FAIL) total_fail=$((total_fail + 1)) ;;
+    *)    estado=WARN; total_warn=$((total_warn + 1)) ;;
+  esac
+  salida+="[$estado] $id — $nombre"$'\n'
+  salida+="    Evidencia:   $evidencia"$'\n'
+  salida+="    Explicación: $explicacion"$'\n\n'
+}
+
+# Devuelve 0 si el modo octal $1 no supera al modo máximo $2 (no agrega bits).
+modo_dentro_de() {
+  local modo="$1" maximo="$2"
+  (( (8#$modo & ~8#$maximo) == 0 ))
+}
+
+# Une hasta N líneas de una lista en una sola línea, separadas por comas.
+resumir() {
+  local maximo="${2:-5}"
+  printf '%s\n' "$1" | sed '/^$/d' | head -n "$maximo" | paste -sd, - | sed 's/,/, /g'
+}
+
+# ---- Controles --------------------------------------------------------------
+
+control_idn_01() {
+  local id=CAT-IDN-01 nombre="Única cuenta privilegiada" archivo="$RAIZ/etc/passwd" uid0
+  if [[ ! -r "$archivo" ]]; then
+    resultado $id "$nombre" WARN "no se puede leer $archivo" "Sin /etc/passwd no se pueden comprobar los UID."
+    return
+  fi
+  uid0=$(awk -F: '$3 == 0 {print $1}' "$archivo")
+  if [[ "$uid0" == "root" ]]; then
+    resultado $id "$nombre" PASS "cuentas con UID 0: root" "Solo root tiene privilegios totales."
+  elif [[ -z "$uid0" ]]; then
+    resultado $id "$nombre" FAIL "ninguna cuenta con UID 0" "No existe root con UID 0; el archivo está alterado."
+  else
+    resultado $id "$nombre" FAIL "cuentas con UID 0: $(resumir "$uid0")" "Hay cuentas con UID 0 además de root; cualquiera de ellas tiene control total."
+  fi
+}
+
+control_idn_02() {
+  local id=CAT-IDN-02 nombre="Sin contraseñas vacías" passwd="$RAIZ/etc/passwd" shadow="$RAIZ/etc/shadow"
+  local vacias_passwd vacias_shadow con_x
+  if [[ ! -r "$passwd" ]]; then
+    resultado $id "$nombre" WARN "no se puede leer $passwd" "No se pueden enumerar las cuentas."
+    return
+  fi
+  vacias_passwd=$(awk -F: '$2 == "" {print $1}' "$passwd")
+  if [[ -n "$vacias_passwd" ]]; then
+    resultado $id "$nombre" FAIL "contraseña vacía en /etc/passwd: $(resumir "$vacias_passwd")" "Esas cuentas permiten entrar sin contraseña."
+    return
+  fi
+  con_x=$(awk -F: '$2 == "x"' "$passwd" | wc -l)
+  if [[ ! -e "$shadow" ]]; then
+    if (( con_x > 0 )); then
+      resultado $id "$nombre" WARN "/etc/shadow no existe y $con_x cuentas de /etc/passwd usan 'x'" "No se sabe dónde están las contraseñas; no se puede concluir."
+    else
+      resultado $id "$nombre" PASS "sin /etc/shadow; ninguna cuenta con contraseña vacía en /etc/passwd" "Todas las cuentas tienen un valor en el campo de contraseña."
+    fi
+    return
+  fi
+  if [[ ! -r "$shadow" ]]; then
+    resultado $id "$nombre" WARN "no se puede leer /etc/shadow (¿se ejecutó como root?)" "Sin leer /etc/shadow no se puede verificar."
+    return
+  fi
+  vacias_shadow=$(awk -F: '$2 == "" {print $1}' "$shadow")
+  if [[ -n "$vacias_shadow" ]]; then
+    resultado $id "$nombre" FAIL "contraseña vacía en /etc/shadow: $(resumir "$vacias_shadow")" "Esas cuentas permiten entrar sin contraseña."
+  else
+    resultado $id "$nombre" PASS "$(wc -l < "$shadow") cuentas en /etc/shadow, ninguna vacía" "Las cuentas tienen contraseña o están bloqueadas (!, *)."
+  fi
+}
+
+control_per_01() {
+  local id=CAT-PER-01 nombre="Archivos de identidad protegidos"
+  local archivo maximo datos modo dueno grupo faltan="" problemas="" detalle=""
+  for par in passwd:644 group:644 shadow:640 gshadow:640; do
+    archivo="$RAIZ/etc/${par%%:*}"; maximo="${par##*:}"
+    if [[ ! -e "$archivo" ]]; then faltan+="${par%%:*} "; continue; fi
+    datos=$(stat -c '%a %U %G' "$archivo")
+    read -r modo dueno grupo <<< "$datos"
+    detalle+="${par%%:*}=$modo $dueno:$grupo; "
+    if [[ "$dueno" != root || "$grupo" != root ]] || ! modo_dentro_de "$modo" "$maximo"; then
+      problemas+="${par%%:*} ($modo $dueno:$grupo, máximo $maximo root:root); "
+    fi
+  done
+  if [[ -n "$problemas" ]]; then
+    resultado $id "$nombre" FAIL "$problemas" "Permisos o dueño más abiertos de lo permitido."
+  elif [[ -n "$faltan" ]]; then
+    resultado $id "$nombre" WARN "faltan: $faltan| $detalle" "No se puede afirmar que esté protegido un archivo que no existe."
+  else
+    resultado $id "$nombre" PASS "$detalle" "Los cuatro archivos pertenecen a root y no superan los permisos máximos."
+  fi
+}
+
+control_per_02() {
+  local id=CAT-PER-02 nombre="Escritura global restringida"
+  local base="${RAIZ:-/}" archivos directorios errores problemas="" faltan="" dir modo
+  archivos=$(find "$base" -xdev -type f -perm -0002 2>/dev/null | sed "s|^$RAIZ||")
+  directorios=$(find "$base" -xdev -type d -perm -0002 ! -perm -1000 2>/dev/null | sed "s|^$RAIZ||")
+  errores=$(find "$base" -xdev -type d 2>&1 >/dev/null | wc -l)
+  for dir in /tmp /var/tmp; do
+    if [[ ! -d "$RAIZ$dir" ]]; then faltan+="$dir "; continue; fi
+    modo=$(stat -c '%a' "$RAIZ$dir")
+    [[ "$modo" == 1777 ]] || problemas+="$dir tiene $modo (se espera 1777); "
+  done
+  [[ -n "$archivos" ]] && problemas+="archivos con escritura global ($(printf '%s\n' "$archivos" | wc -l)): $(resumir "$archivos" 3); "
+  [[ -n "$directorios" ]] && problemas+="directorios con escritura global sin sticky ($(printf '%s\n' "$directorios" | wc -l)): $(resumir "$directorios" 3); "
+  if [[ -n "$problemas" ]]; then
+    resultado $id "$nombre" FAIL "$problemas" "Cualquier usuario puede modificar esos archivos o borrar archivos ajenos."
+  elif [[ -n "$faltan" || "$errores" -gt 0 ]]; then
+    resultado $id "$nombre" WARN "faltan: ${faltan:-ninguno}; directorios no recorridos por permisos: $errores" "La búsqueda no fue completa; no se puede concluir."
+  else
+    resultado $id "$nombre" PASS "ningún archivo ni directorio inseguro; /tmp y /var/tmp con 1777" "No hay escritura global injustificada."
+  fi
+}
+
+control_ssh_01() {
+  local id=CAT-SSH-01 nombre="Root sin acceso remoto directo"
+  local cmdline pid programa argumentos arg anterior encontrados=0 con_w=0 sin_w=""
+  for cmdline in "$PROC"/[0-9]*/cmdline; do
+    [[ -r "$cmdline" ]] || continue
+    argumentos=$(tr '\0' '\n' < "$cmdline" 2>/dev/null) || continue
+    programa=$(printf '%s\n' "$argumentos" | head -n1)
+    [[ "${programa##*/}" == dropbear ]] || continue
+    pid="${cmdline%/cmdline}"; pid="${pid##*/}"
+    encontrados=$((encontrados + 1))
+    local tiene_w=0
+    anterior=""
+    while IFS= read -r arg; do
+      # Las opciones -p, -r, -b, -P, -K, -I, -c, -W, -T toman un valor: no confundirlo con -w
+      case "$anterior" in -p|-r|-b|-P|-K|-I|-c|-W|-T) anterior=""; continue ;; esac
+      [[ "$arg" =~ ^-[A-Za-z]*w[A-Za-z]*$ ]] && tiene_w=1
+      anterior="$arg"
+    done <<< "$(printf '%s\n' "$argumentos" | tail -n +2)"
+    if (( tiene_w )); then con_w=$((con_w + 1)); else sin_w+="$pid "; fi
+  done
+  if (( encontrados == 0 )); then
+    resultado $id "$nombre" WARN "no hay procesos dropbear en ejecución" "No se puede verificar la configuración efectiva del servidor SSH."
+  elif [[ -n "$sin_w" ]]; then
+    resultado $id "$nombre" FAIL "dropbear sin la opción -w (PID ${sin_w% })" "El servidor SSH acepta el inicio de sesión directo de root."
+  else
+    resultado $id "$nombre" PASS "$con_w proceso(s) dropbear, todos con -w" "Dropbear rechaza el inicio de sesión directo de root."
+  fi
+}
+
+# Convierte una dirección de /proc/net/tcp (hex, little-endian) a IPv4 legible.
+ip_desde_hex() {
+  local h="$1"
+  printf '%d.%d.%d.%d' "0x${h:6:2}" "0x${h:4:2}" "0x${h:2:2}" "0x${h:0:2}"
+}
+
+control_red_01() {
+  local id=CAT-RED-01 nombre="Puertos autorizados"
+  local tabla linea local_hex estado inodo ip puerto proceso escucha="" problemas="" sin_proceso=0 lineas_leidas=0
+  if [[ ! -r "$PROC/net/tcp" ]]; then
+    resultado $id "$nombre" WARN "no se puede leer $PROC/net/tcp" "Sin la tabla de sockets no se pueden enumerar los puertos."
+    return
+  fi
+  # Mapa inodo de socket -> nombre del proceso
+  declare -A proceso_de
+  local fd destino p
+  for fd in "$PROC"/[0-9]*/fd/*; do
+    destino=$(readlink "$fd" 2>/dev/null) || continue
+    [[ "$destino" == socket:\[*\] ]] || continue
+    p="${fd#"$PROC"/}"; p="${p%%/*}"
+    proceso_de["${destino//[^0-9]/}"]=$(cat "$PROC/$p/comm" 2>/dev/null || echo "?")
+  done
+  for tabla in tcp tcp6; do
+    [[ -r "$PROC/net/$tabla" ]] || continue
+    # Se lee el archivo directamente (sin "< <(...)"), porque eso requiere /dev/fd,
+    # que no existe en Aegis Auth después de reiniciar.
+    local primera=1
+    while read -r _ local_hex _ estado _ _ _ _ _ inodo _; do
+      if (( primera )); then primera=0; continue; fi   # encabezado
+      lineas_leidas=$((lineas_leidas + 1))
+      [[ "$estado" == 0A ]] || continue        # 0A = LISTEN
+      puerto=$((16#${local_hex##*:}))
+      if [[ "$tabla" == tcp ]]; then
+        ip=$(ip_desde_hex "${local_hex%%:*}")
+      elif [[ "${local_hex%%:*}" =~ ^0+$ ]]; then
+        ip="::"
+      else
+        ip="ipv6:${local_hex%%:*}"
+      fi
+      proceso="${proceso_de[$inodo]:-}"
+      if [[ -z "$proceso" ]]; then
+        proceso="?"; (( es_root )) || sin_proceso=$((sin_proceso + 1))
+      fi
+      escucha+="$ip:$puerto($proceso) "
+      if [[ " ${PUERTOS_AUTORIZADOS//,/ } " != *" $ip:$puerto:$proceso "* ]]; then
+        problemas+="$ip:$puerto($proceso) "
+      fi
+    done < "$PROC/net/$tabla"
+  done
+  if [[ -n "$problemas" ]]; then
+    resultado $id "$nombre" FAIL "no autorizados: $problemas| autorizados: $PUERTOS_AUTORIZADOS" "Hay puertos en escucha fuera de la lista, o en una IP o proceso distintos de los autorizados."
+  elif [[ -z "$escucha" ]] && grep -qs 'dropbear' "$PROC"/[0-9]*/comm; then
+    resultado $id "$nombre" WARN "dropbear está en ejecución pero no se leyó ningún puerto en escucha ($lineas_leidas sockets leídos)" "Resultado inconsistente: la lectura de la tabla de sockets probablemente falló."
+  elif (( sin_proceso > 0 )); then
+    resultado $id "$nombre" WARN "$sin_proceso puerto(s) sin proceso identificable (¿se ejecutó como root?)" "No se puede asociar cada puerto a un proceso conocido."
+  else
+    resultado $id "$nombre" PASS "en escucha: ${escucha:-ninguno}" "Solo están abiertos los puertos autorizados."
+  fi
+}
+
+control_prop_01() {
+  local id=PROP-AEGIS-01 nombre="Base de usuarios protegida"
+  local datos_dir datos_arch modo_dir dueno_dir modo_arch dueno_arch lineas invalidas problemas=""
+  if [[ ! -e "$AEGIS_USUARIOS" ]]; then
+    resultado $id "$nombre" WARN "no existe ${AEGIS_USUARIOS#"$RAIZ"}" "La base todavía no fue inicializada (aegisctl iniciar-admin) o el servicio no está instalado."
+    return
+  fi
+  if [[ ! -r "$AEGIS_USUARIOS" ]]; then
+    resultado $id "$nombre" WARN "no se puede leer la base (¿se ejecutó como root?)" "Sin leerla no se puede verificar su formato."
+    return
+  fi
+  read -r modo_dir dueno_dir <<< "$(stat -c '%a %U' "$AEGIS_DIR")"
+  read -r modo_arch dueno_arch <<< "$(stat -c '%a %U' "$AEGIS_USUARIOS")"
+  modo_dentro_de "$modo_dir" 700  || problemas+="directorio con $modo_dir (máximo 700); "
+  modo_dentro_de "$modo_arch" 600 || problemas+="archivo con $modo_arch (máximo 600); "
+  [[ "$dueno_dir" == "$AEGIS_DUENO" ]]  || problemas+="directorio de $dueno_dir (se espera $AEGIS_DUENO); "
+  [[ "$dueno_arch" == "$AEGIS_DUENO" ]] || problemas+="archivo de $dueno_arch (se espera $AEGIS_DUENO); "
+  lineas=$(wc -l < "$AEGIS_USUARIOS")
+  # Solo se informan los NÚMEROS de línea inválidos, nunca su contenido.
+  invalidas=$(awk '
+    !( NF == 4 &&
+       $1 ~ /^[A-Za-z0-9_-]+$/ && length($1) <= 32 &&
+       ($2 == "administrador" || $2 == "operador") &&
+       $3 ~ /^[0-9a-f]+$/ && length($3) == 32 &&
+       $4 ~ /^[0-9a-f]+$/ && length($4) == 64 ) { print NR }' "$AEGIS_USUARIOS")
+  [[ -n "$invalidas" ]] && problemas+="líneas con formato inválido: $(resumir "$invalidas" 10); "
+  if [[ -n "$problemas" ]]; then
+    resultado $id "$nombre" FAIL "$problemas" "La base de credenciales es accesible por otros o contiene datos que no son hashes PBKDF2."
+  elif (( lineas == 0 )); then
+    resultado $id "$nombre" WARN "la base existe pero está vacía (dir $modo_dir, archivo $modo_arch)" "No hay cuentas para verificar."
+  else
+    resultado $id "$nombre" PASS "dir $modo_dir $dueno_dir, archivo $modo_arch $dueno_arch, $lineas cuenta(s) con sal y hash PBKDF2" "Solo el servicio accede a la base y no hay contraseñas en texto plano."
+  fi
+}
+
+control_prop_02() {
+  local id=PROP-AEGIS-02 nombre="Registro sin secretos"
+  local modo dueno lineas secretos formato_invalido problemas=""
+  if [[ ! -e "$AEGIS_LOG" ]]; then
+    resultado $id "$nombre" WARN "no existe ${AEGIS_LOG#"$RAIZ"}" "El servicio no registró eventos todavía o no está instalado."
+    return
+  fi
+  if [[ ! -r "$AEGIS_LOG" ]]; then
+    resultado $id "$nombre" WARN "no se puede leer el registro (¿se ejecutó como root?)" "Sin leerlo no se puede verificar su contenido."
+    return
+  fi
+  read -r modo dueno <<< "$(stat -c '%a %U' "$AEGIS_LOG")"
+  modo_dentro_de "$modo" 600     || problemas+="permisos $modo (máximo 600); "
+  [[ "$dueno" == "$AEGIS_DUENO" ]] || problemas+="dueño $dueno (se espera $AEGIS_DUENO); "
+  lineas=$(wc -l < "$AEGIS_LOG")
+  # Solo se informan cantidades y números de línea, nunca el contenido.
+  secretos=$(grep -nE '[0-9a-fA-F]{64}|token=' "$AEGIS_LOG" | cut -d: -f1)
+  formato_invalido=$(grep -nvE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z action=[a-z_]+ user=[A-Za-z0-9_-]+ result=[a-z]+$' "$AEGIS_LOG" | cut -d: -f1)
+  [[ -n "$secretos" ]] && problemas+="posibles tokens o hashes en líneas: $(resumir "$secretos" 10); "
+  if [[ -n "$problemas" ]]; then
+    resultado $id "$nombre" FAIL "$problemas" "El registro puede filtrar credenciales o lo pueden leer otros usuarios."
+  elif (( lineas == 0 )); then
+    resultado $id "$nombre" WARN "el registro existe pero está vacío (permisos $modo)" "No hay eventos que revisar."
+  elif [[ -n "$formato_invalido" ]]; then
+    resultado $id "$nombre" WARN "$lineas líneas; formato no reconocido en líneas: $(resumir "$formato_invalido" 10)" "No hay secretos detectables, pero hay líneas con un formato inesperado que conviene revisar."
+  else
+    resultado $id "$nombre" PASS "permisos $modo $dueno, $lineas línea(s), ninguna con tokens ni hashes" "El servicio registra acción, usuario y resultado sin filtrar credenciales."
+  fi
+}
+
+# ---- Ejecución --------------------------------------------------------------
+
+control_idn_01
+control_idn_02
+control_per_01
+control_per_02
+control_ssh_01
+control_red_01
+control_prop_01
+control_prop_02
+
+pid1=$(cat "$PROC/1/comm" 2>/dev/null || echo desconocido)
+kernel=$(uname -r 2>/dev/null || echo desconocido)
+cabecera="Aegis Audit v$VERSION — informe de seguridad
+Fecha:    $fecha
+Host:     $host
+Kernel:   $kernel
+PID 1:    $pid1
+Ejecutor: $(id -un 2>/dev/null || id -u)$( (( es_root )) || echo ' (sin root: varios controles darán WARN)')
+Controles: 8 (6 del catálogo + 2 propios). La herramienta no modifica el sistema.
+======================================================================
+"
+pie="======================================================================
+Resumen: PASS=$total_pass  FAIL=$total_fail  WARN=$total_warn
+"
+
+printf '%s\n%s%s' "$cabecera" "$salida" "$pie" > "$informe"
+chmod 600 "$informe"
+(( silencioso )) || cat "$informe"
+echo "Informe guardado en: $informe" >&2
+
+(( total_fail == 0 ))

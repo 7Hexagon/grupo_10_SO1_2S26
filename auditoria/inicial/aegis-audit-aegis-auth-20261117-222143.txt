@@ -1,0 +1,43 @@
+Aegis Audit v1.1 — informe de seguridad
+Fecha:    2026-11-17 22:21:43 -0300
+Host:     aegis-auth
+Kernel:   7.1.8
+PID 1:    aegis-init
+Ejecutor: root
+Controles: 8 (6 del catálogo + 2 propios). La herramienta no modifica el sistema.
+======================================================================
+
+[PASS] CAT-IDN-01 — Única cuenta privilegiada
+    Evidencia:   cuentas con UID 0: root
+    Explicación: Solo root tiene privilegios totales.
+
+[PASS] CAT-IDN-02 — Sin contraseñas vacías
+    Evidencia:   15 cuentas en /etc/shadow, ninguna vacía
+    Explicación: Las cuentas tienen contraseña o están bloqueadas (!, *).
+
+[PASS] CAT-PER-01 — Archivos de identidad protegidos
+    Evidencia:   passwd=644 root:root; group=644 root:root; shadow=400 root:root; gshadow=400 root:root; 
+    Explicación: Los cuatro archivos pertenecen a root y no superan los permisos máximos.
+
+[PASS] CAT-PER-02 — Escritura global restringida
+    Evidencia:   ningún archivo ni directorio inseguro; /tmp y /var/tmp con 1777
+    Explicación: No hay escritura global injustificada.
+
+[FAIL] CAT-SSH-01 — Root sin acceso remoto directo
+    Evidencia:   dropbear sin la opción -w (PID 350 73)
+    Explicación: El servidor SSH acepta el inicio de sesión directo de root.
+
+[PASS] CAT-RED-01 — Puertos autorizados
+    Evidencia:   en escucha: 192.168.56.110:22(dropbear) 
+    Explicación: Solo están abiertos los puertos autorizados.
+
+[FAIL] PROP-AEGIS-01 — Base de usuarios protegida
+    Evidencia:   líneas con formato inválido: 2; 
+    Explicación: La base de credenciales es accesible por otros o contiene datos que no son hashes PBKDF2.
+
+[PASS] PROP-AEGIS-02 — Registro sin secretos
+    Evidencia:   permisos 600 root, 15 línea(s), ninguna con tokens ni hashes
+    Explicación: El servicio registra acción, usuario y resultado sin filtrar credenciales.
+
+======================================================================
+Resumen: PASS=6  FAIL=2  WARN=0
