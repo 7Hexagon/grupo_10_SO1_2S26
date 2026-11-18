@@ -36,7 +36,7 @@
 ## Verificaciones adicionales del 17/11
 
 - **El código del repositorio es el que corre en Aegis.** Los SHA-256 de `src/aegisd/aegisd.c` (`41bef99e…342747`) y `src/aegisd/aegisctl.c` (`33e26ffe…e000f6`) coinciden con los fuentes de `/root/aegisd-lab-v2-20261116/`. El binario instalado `/usr/sbin/aegisd` es idéntico al compilado en esa carpeta (SHA-256 `09dfafd7…a461d3`).
-- **Arranque automático:** Dropbear corre con PID 73, un número bajo que indica que lo inició `aegis-init` al arrancar, y escucha en `192.168.56.110:22`. Falta confirmar que `aegisd` también esté en ejecución.
+- **El arranque automático funciona.** Después del reinicio, `aegis-init` lanzó Dropbear (PID 73, escuchando en `192.168.56.110:22`) y `aegisd` (PID 74, socket `/run/aegisd.sock` creado a las 18:58 del 17/11). Esto cierra el pendiente "no probado tras reiniciar" del 16/11.
 
 ## Qué corrige el hardening (Bloque 4)
 
