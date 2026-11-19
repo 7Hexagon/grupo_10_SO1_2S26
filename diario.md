@@ -70,3 +70,11 @@ En una copia independiente se instalo systemd 261.2 y se comprobo su arranque co
 La auditoria detecto sockets DNS y LLMNR de systemd-resolved fuera de la lista de puertos. Se respaldo la configuracion, se deshabilito el servicio junto con sus sockets y se ajusto la resolucion local. El procedimiento verifico servicios, localhost y ausencia de esos puertos; la salida comunicada de aegis-audit v1.1 con la IP experimental fue PASS=8, FAIL=0, WARN=0. El informe original `/root/aegis-audit-aegis-auth-20261119-143419.txt` esta pendiente de copia al repositorio. Ver `config/hardening/systemd-resolved-experimental.md`.
 
 Durante la comprobacion posterior SSH dejo de responder y la consola mostro un kernel panic `Fatal exception in interrupt`, de causa no determinada. No se reinicio la VM ni se creo un snapshot del estado bloqueado. El punto existente es anterior al primer arranque con systemd; quedan pendientes recuperar el informe y crear un respaldo actualizado coherente antes de instalar GRUB.
+
+## 2026-11-19 - recuperacion y auditoria de la copia con systemd
+
+Tras el kernel panic de causa desconocida, se preservaron las cadenas de discos y registros. La comprobacion de ext4 se hizo sobre una imagen independiente: se corrigieron inconsistencias de contadores y `e2fsck -f -n` termino sin errores. Del RAW reparado se obtuvo un VDI independiente, comparado byte a byte con el RAW antes del arranque.
+
+La nueva VM arranco con aegis-init y Bash; luego se comprobo systemd como PID 1. Con la red inicialmente desconectada permanecio mas de 74 minutos sin otro panic. Tras habilitar host-only, la IP 192.168.56.111 respondio, admin_aegis accedio por SSH y root fue rechazado. El usuario comprobo la prueba de autenticacion invalida de aegisd y journal; systemd informo `running` sin unidades fallidas. La auditoria v1.1 con la IP experimental dio PASS=8, FAIL=0, WARN=0. Evidencia: `auditoria/systemd-recuperada/`. La estabilidad es inicial y no se establecio la causa del panic.
+
+Despues de sincronizar y apagar ordenadamente la VM, se creo el snapshot `systemd-recuperado-auditoria-8pass-pre-grub-20261119`. Se conserva el RAW y el respaldo anterior. GRUB sigue en la ISO auxiliar; se preparo una configuracion candidata con entradas systemd y aegis-init, sin instalar ni escribir el cargador en el disco. Detalles en `config/systemd-experimental/`.

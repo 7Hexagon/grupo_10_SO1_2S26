@@ -4,7 +4,7 @@ El 19/11/2026 la copia `Aegis-Auth-systemd-experimental` arranco con systemd 261
 
 Se respaldo la configuracion en `/root/aegis-resolved-pre-hardening-20261119`. Se detuvieron y deshabilitaron `systemd-resolved.service`, `systemd-resolved-varlink.socket` y `systemd-resolved-monitor.socket`; `/etc/resolv.conf` quedo como archivo regular sin servidor DNS y la linea hosts de `/etc/nsswitch.conf` sin resolve y dns. No se proporciona resolucion DNS de nombres externos.
 
-El procedimiento verifico ausencia de listeners TCP y UDP en puertos 53 y 5355, networkd, Dropbear y aegisd activos y resolucion de localhost. La salida comunicada de `aegis-audit` v1.1, con `PUERTOS_AUTORIZADOS=192.168.56.111:22:dropbear`, fue `PASS=8 FAIL=0 WARN=0`, codigo 0. El informe indicado es `/root/aegis-audit-aegis-auth-20261119-143419.txt`; falta copiarlo al repositorio porque la VM sufrio un kernel panic antes de recuperarlo. No se modifico el auditor.
+El procedimiento verifico ausencia de listeners TCP y UDP en puertos 53 y 5355, networkd, Dropbear y aegisd activos y resolucion de localhost. La salida comunicada de `aegis-audit` v1.1, con `PUERTOS_AUTORIZADOS=192.168.56.111:22:dropbear`, fue `PASS=8 FAIL=0 WARN=0`, codigo 0. El informe indicado es `/root/aegis-audit-aegis-auth-20261119-143419.txt`; se recupero tras el incidente; la auditoria posterior de la VM reparada esta en `auditoria/systemd-recuperada/`. No se modifico el auditor.
 
 ## Reversion
 
