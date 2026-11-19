@@ -42,7 +42,7 @@ Se compilo GRUB 2.14 BIOS desde `/sources/grub-2.14.tar.xz` siguiendo LFS 13.1 y
 
 `/usr/sbin/grub-install --target=i386-pc /dev/sda` finalizo sin errores tras comprobar nuevamente el destino. La configuracion de `/boot/grub/grub.cfg` coincide con `grub-disco-candidato.cfg` y paso `grub-script-check`. El log es `evidencias/parte1/grub-disco-20261119/instalacion-grub.log`.
 
-Se apago ordenadamente la VM, se desconecto la ISO auxiliar y se establecio el disco como unico medio de arranque. El menu de GRUB 2.14 mostro las dos entradas; el sistema arranco con systemd como PID 1, estado `running`, cero unidades fallidas, aegisd, journald, networkd, wait-online y Dropbear activos. Se comprobo SSH como admin_aegis y se rechazo root por clave. Captura: `evidencias/parte1/grub-disco-20261119/menu-grub-disco.png`. La entrada alternativa aegis-init figura en el menu, pero todavia no se probo desde GRUB instalado en disco. La auditoria posterior al arranque desde disco queda pendiente hasta ejecutar la prueba privilegiada.
+Se apago ordenadamente la VM, se desconecto la ISO auxiliar y se establecio el disco como unico medio de arranque. El menu de GRUB 2.14 mostro las dos entradas; el sistema arranco con systemd como PID 1, estado `running`, cero unidades fallidas, aegisd, journald, networkd, wait-online y Dropbear activos. Se comprobo SSH como admin_aegis y se rechazo root por clave. Captura: `evidencias/parte1/grub-disco-20261119/menu-grub-disco.png`. La entrada alternativa aegis-init figura en el menu, pero todavia no se probo desde GRUB instalado en disco. La auditoria v1.1 posterior al arranque desde disco dio PASS=8, FAIL=0, WARN=0; ver `auditoria/systemd-recuperada/comparacion-grub.md`.
 
 ## Recuperacion si falla el arranque
 
