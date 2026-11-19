@@ -1,0 +1,8 @@
+TARGET=/dev/sda serial=VBfe4c36c6-40cde56c
+c07e1493f74d5e6ebcfc18c816805caff07555971748d7e2fcdd1ce17ebf0aa2  /root/aegis-grub-disk-before-20261119/first-2048-sectors.img
+GRUB_INSTALL_START
+Installing for i386-pc platform.
+Installation finished. No error reported.
+c6aa000e57a77b5a9bc4246e5acf0855ebe8dd8e373aee79f710b4633d2e64f8  /boot/grub/grub.cfg
+GRUB_DISK_INSTALL_PASS
+INSTALL_RC=0

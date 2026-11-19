@@ -33,3 +33,25 @@ No se encontraron grub-install, grub-mkconfig ni `/usr/lib/grub/i386-pc`; existe
 `grub-disco-candidato.cfg` prepara una entrada systemd por defecto y otra de recuperacion mediante aegis-init. Solo se reviso estaticamente; `grub-script-check` no estaba disponible y no se ha probado en disco. Para el siguiente paso: arrancar desde la ISO auxiliar, confirmar UUID, PARTUUID y medio activo, validar y respaldar el punto de restauracion, verificar paquete y espacio de insercion BIOS; despues preparar la instalacion del paquete y solicitar autorizacion especifica antes de cualquier escritura del cargador al disco. Mantener la ISO conectada para rescate. Instalar GRUB BIOS escribe el MBR y areas asociadas; no ejecutar sobre Rocky ni elegir el destino por un nombre `/dev/sdX` sin verificar. La MAC y direccion IP son exclusivas mientras las otras copias estan apagadas.
 
 Referencias: https://www.linuxfromscratch.org/lfs/view/13.1-systemd/chapter08/grub.html y https://www.linuxfromscratch.org/lfs/view/13.1-systemd/chapter10/grub.html.
+
+## Instalacion y primer arranque desde disco - 2026-11-19
+
+En `Aegis-Auth-reparada-prueba`, protegida por el snapshot `systemd-recuperado-auditoria-8pass-pre-grub-20261119`, se verifico la cadena del disco, tabla DOS, unica particion iniciada en el sector 2048 y espacio de insercion sin bytes no nulos. Se verificaron el serial del disco, UUID de raiz y PARTUUID. Se guardo y comparo el primer MiB en `/root/aegis-grub-disk-before-20261119/first-2048-sectors.img`.
+
+Se compilo GRUB 2.14 BIOS desde `/sources/grub-2.14.tar.xz` siguiendo LFS 13.1 y se ejecuto `make install`. Una verificacion posterior busco por error grub-install en `/usr/bin` y termino con codigo 1; la compilacion y la instalacion del paquete ya habian finalizado. La herramienta estaba en `/usr/sbin/grub-install`, se verifico su version y la presencia de los modulos i386-pc. `grub-script-check` acepto la configuracion. No se repitio la compilacion. El registro completo de compilacion se conserva localmente en `C:\Users\achol\Codex-LFS\aegis-incident-20261119\grub-build-20261119.log` (SHA-256 `acdf268ad783d21928dcf9c081eb5e2482bcb4e908ab05b62446317d77621a0a`).
+
+`/usr/sbin/grub-install --target=i386-pc /dev/sda` finalizo sin errores tras comprobar nuevamente el destino. La configuracion de `/boot/grub/grub.cfg` coincide con `grub-disco-candidato.cfg` y paso `grub-script-check`. El log es `evidencias/parte1/grub-disco-20261119/instalacion-grub.log`.
+
+Se apago ordenadamente la VM, se desconecto la ISO auxiliar y se establecio el disco como unico medio de arranque. El menu de GRUB 2.14 mostro las dos entradas; el sistema arranco con systemd como PID 1, estado `running`, cero unidades fallidas, aegisd, journald, networkd, wait-online y Dropbear activos. Se comprobo SSH como admin_aegis y se rechazo root por clave. Captura: `evidencias/parte1/grub-disco-20261119/menu-grub-disco.png`. La entrada alternativa aegis-init figura en el menu, pero todavia no se probo desde GRUB instalado en disco. La auditoria posterior al arranque desde disco queda pendiente hasta ejecutar la prueba privilegiada.
+
+## Recuperacion si falla el arranque
+
+Primero elegir `Aegis Auth - recuperacion aegis-init` desde el menu del disco. Si GRUB no aparece, apagar ordenadamente la VM si responde y, con `Aegis-Auth-reparada-prueba` apagada, volver a conectar la ISO auxiliar conservada y darle prioridad de arranque:
+
+```powershell
+$v = 'C:\Program Files\Oracle\VirtualBox\VBoxManage.exe'
+& $v storageattach 'Aegis-Auth-reparada-prueba' --storagectl IDE --port 0 --device 0 --type dvddrive --medium 'C:\Users\achol\Codex-LFS\systemd-migration-candidate-20261118\aegis-systemd-experimental.iso'
+& $v modifyvm 'Aegis-Auth-reparada-prueba' --boot1 dvd --boot2 disk
+```
+
+Comprobar las asociaciones con `showvminfo --machinereadable` antes de iniciar. La ISO ofrece aegis-init y systemd. No restaurar el snapshot ni escribir la copia del MBR automaticamente: esas acciones descartan cambios o sobrescriben sectores y requieren evaluar el estado y una autorizacion especifica.
