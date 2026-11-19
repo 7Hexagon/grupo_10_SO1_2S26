@@ -1,0 +1,6 @@
+[Match]
+MACAddress=08:00:27:d3:70:cf
+
+[Network]
+Address=192.168.56.111/24
+LinkLocalAddressing=no

@@ -1,0 +1,15 @@
+[Unit]
+Description=Aegis Auth servicio local de credenciales
+After=local-fs.target
+
+[Service]
+Type=simple
+UMask=0077
+ExecStartPre=/usr/bin/test ! -e /run/aegisd.sock
+ExecStart=/usr/sbin/aegisd
+StandardOutput=append:/var/log/aegisd-service.log
+StandardError=append:/var/log/aegisd-service.log
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

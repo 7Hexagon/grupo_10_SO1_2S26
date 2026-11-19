@@ -1,0 +1,16 @@
+[Unit]
+Description=Aegis Auth SSH (solo red de laboratorio)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+UMask=0077
+ExecStart=/usr/sbin/dropbear -F -E -s -j -k -w -p 192.168.56.111:22 -r /etc/dropbear/dropbear_ed25519_host_key
+StandardOutput=append:/var/log/aegis-dropbear.log
+StandardError=append:/var/log/aegis-dropbear.log
+Restart=on-failure
+RestartSec=3s
+
+[Install]
+WantedBy=multi-user.target
