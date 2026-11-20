@@ -65,7 +65,7 @@ Se implementaron en C con libcrypto `aegisd` y `aegisctl`, con usuarios de labor
 
 ## 2026-11-19 - systemd experimental y ajuste de red
 
-En una copia independiente se instalo systemd 261.2 y se comprobo su arranque como PID 1. Se informo que systemctl, journalctl, D-Bus, networkd, Dropbear y aegisd funcionaban. Cuatro pruebas de namespaces siguieron fallando con CONFIG_USER_NS desactivado. La VM original permanecio separada.
+En una copia independiente se instalo systemd 261.2 y se comprobo su arranque como PID 1. Se informo que systemctl, journalctl, D-Bus, networkd, Dropbear y aegisd funcionaban. La compilacion termino correctamente; de 75 fallos iniciales de pruebas se corrigieron 71 y quedaron cuatro asociados a CONFIG_USER_NS desactivado. La VM original permanecio separada.
 
 La auditoria detecto sockets DNS y LLMNR de systemd-resolved fuera de la lista de puertos. Se respaldo la configuracion, se deshabilito el servicio junto con sus sockets y se ajusto la resolucion local. El procedimiento verifico servicios, localhost y ausencia de esos puertos; la salida comunicada de aegis-audit v1.1 con la IP experimental fue PASS=8, FAIL=0, WARN=0. El informe original `/root/aegis-audit-aegis-auth-20261119-143419.txt` esta pendiente de copia al repositorio. Ver `config/hardening/systemd-resolved-experimental.md`.
 

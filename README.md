@@ -36,12 +36,12 @@
 - `ia/`: registro de utilización de inteligencia artificial.
 - `diario.md`: seguimiento cronológico del trabajo.
 
-## Estado de Aegis Auth — 16/11/2026
+## Estado de Aegis Auth - 20/11/2026
 
-Aegis Auth arrancó en una VM independiente de Rocky mediante una ISO auxiliar de GRUB, con el kernel Linux 7.1.8 compilado desde LFS, raíz ext4 propia, init provisional y Bash. Se comprobó la identidad del sistema, la red host-only y el acceso SSH por clave mediante Dropbear. El comando `aegis-status` consulta los eventos disponibles de SSH.
+Aegis Auth está construida sobre LFS 13.1-systemd. La VM recuperada arranca independientemente desde su disco con GRUB 2.14, kernel Linux 7.1.8 y systemd 261.2 como PID 1. Dispone de red host-only, administración SSH por clave mediante Dropbear y el servicio local de autenticación `aegisd`.
 
-Existe un prototipo local en C de `aegisd` y `aegisctl`: autentica usuarios de laboratorio, emite credenciales de cinco minutos y permite validarlas y revocarlas. Se probaron permisos por rol en una instancia aislada. El prototipo usa un socket local accesible por root; no ofrece todavía una API de red propia. Las contraseñas se almacenan derivadas con PBKDF2, no en texto plano.
+Se aplicó hardening y `aegis-audit` v1.1 verificó ocho controles: PASS=8, FAIL=0, WARN=0 después de instalar GRUB y nuevamente después de instalar Xorg. Se probó una sesión gráfica manual con Xorg 1.21.1.24, Fluxbox 1.3.7 y xterm 411, y el regreso a consola.
 
-**Pendiente:** systemd no es PID 1, no hay sesión gráfica Xorg y el arranque requiere la ISO auxiliar. La integración de `aegisd` al init y la persistencia de los registros de SSH están preparadas, pero faltan pruebas posteriores a un reinicio. El prototipo requiere revisión y continuación, incluida la coordinación con Lucas, responsable previsto del bloque 3. El sistema aún no cumple todos los requisitos originales.
+**Limitaciones:** la causa del kernel panic anterior no se determinó. La sesión gráfica se probó como root local; falta comprobarla después de un reinicio y como usuario sin privilegios. La entrada de recuperación de GRUB aún no se probó desde el disco. No se demostró estabilidad prolongada con red y entorno gráfico. El sistema todavía no representa el cumplimiento completo de todos los requisitos originales.
 
-El código está en `src/aegisd/`; las configuraciones y la configuración real del kernel están en `config/aegis-auth/`. No se incluyen discos, ISO, credenciales ni bases de usuarios.
+El código del servicio está en `src/aegisd/`; las configuraciones en `config/`, las auditorías en `auditoria/`, las capturas en `evidencias/` y el historial en `diario.md`. No se incluyen discos, ISO, credenciales ni bases de usuarios.
