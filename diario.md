@@ -88,3 +88,9 @@ La configuracion con systemd y aegis-init paso `grub-script-check`; `grub-instal
 ## 2026-11-19 - auditoria posterior al arranque desde disco
 
 Tras iniciar con GRUB instalado en el disco y sin ISO auxiliar, systemd informo `running` y cero unidades fallidas. Se ejecuto la validacion privilegiada: el flujo comprueba que aegisd rechace una autenticacion invalida antes de ejecutar el auditor original v1.1 con la IP 192.168.56.111. El informe nuevo registro PASS=8, FAIL=0, WARN=0, iguales a los ocho controles de la auditoria previa. El informe se copio sin modificaciones y se comparo por SHA-256. Evidencia y comparacion: `auditoria/systemd-recuperada/`. La entrada de recuperacion de GRUB permanece disponible; su prueba de arranque desde disco sigue pendiente.
+
+## 2026-11-20 - sesión gráfica mínima
+
+Con el snapshot posterior a GRUB y la auditoría previa conservados, se instalaron las dependencias gráficas necesarias, Xorg 1.21.1.24, Fluxbox 1.3.7 y xterm 411 en la VM recuperada. Se eligió VESA con inicio manual desde la consola local, sin servidor X por TCP; la sesión actual usa root y queda pendiente una alternativa de usuario sin privilegios. Una incompatibilidad de Fluxbox con GCC 16 se corrigió en el árbol de compilación, sin repetir los demás paquetes.
+
+`startx -- -nolisten tcp` abrió Fluxbox y xterm; dentro de la terminal se comprobaron el kernel, el hostname y systemd como PID 1. Tras terminar Fluxbox se volvió a la consola, con advertencias de desconexión y MTRR registradas en la documentación. Los servicios principales siguieron activos, el acceso root por SSH fue rechazado y aegisd rechazó una autenticación inválida. La auditoría original v1.1 dio PASS=8, FAIL=0, WARN=0. Captura, informe y límites de la prueba: `config/xorg-minimo/README.md`.

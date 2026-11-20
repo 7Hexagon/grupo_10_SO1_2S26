@@ -1,0 +1,3 @@
+#!/bin/sh
+xterm -fa "DejaVu Sans Mono" -fs 11 -geometry 90x25+40+40 &
+exec fluxbox
