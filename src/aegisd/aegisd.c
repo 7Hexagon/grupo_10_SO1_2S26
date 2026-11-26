@@ -91,11 +91,28 @@ struct sesion {
     unsigned char hash_token[LARGO_HASH];  /* SHA-256 del token, nunca el token */
     char usuario[MAX_USUARIO + 1];
     char rol[MAX_ROL + 1];
-    time_t vence;                          /* instante de vencimiento (Unix) */
+    time_t vence;                          /* vencimiento Unix, solo informativo */
+    time_t vence_boot;                     /* vencimiento real, CLOCK_BOOTTIME */
     int en_uso;
 };
 
 static struct sesion sesiones[MAX_SESIONES];
+
+/* El reloj incluye suspension y no retrocede cuando se ajusta el calendario. */
+static time_t tiempo_boot(void)
+{
+    struct timespec ts;
+    if (clock_gettime(CLOCK_BOOTTIME, &ts) != 0)
+        return (time_t)-1;
+    return ts.tv_sec;
+}
+
+
+static int sesion_vencida(const struct sesion *sesion)
+{
+    time_t ahora = tiempo_boot();
+    return ahora == (time_t)-1 || sesion->vence_boot <= ahora;
+}
 
 /* ---- Utilidades ---------------------------------------------------------- */
 
@@ -211,7 +228,7 @@ static int buscar_sesion(const char *token_hex)
     OPENSSL_cleanse(token, sizeof token);
     for (int i = 0; i < MAX_SESIONES; i++) {
         if (sesiones[i].en_uso && CRYPTO_memcmp(sesiones[i].hash_token, hash, LARGO_HASH) == 0) {
-            if (sesiones[i].vence <= time(NULL)) {
+            if (sesion_vencida(&sesiones[i])) {
                 sesiones[i].en_uso = 0;
                 return -1;
             }
@@ -299,9 +316,14 @@ static void autenticar(FILE *cliente, const char *usuario, const char *clave_hex
 
     /* Buscar un lugar libre (o vencido) para la sesión nueva */
     time_t ahora = time(NULL);
+    time_t ahora_boot = tiempo_boot();
+    if (ahora == (time_t)-1 || ahora_boot == (time_t)-1) {
+        fprintf(cliente, "ERR reloj\n");
+        return;
+    }
     int i;
     for (i = 0; i < MAX_SESIONES; i++)
-        if (!sesiones[i].en_uso || sesiones[i].vence <= ahora)
+        if (!sesiones[i].en_uso || sesiones[i].vence_boot <= ahora_boot)
             break;
     if (i == MAX_SESIONES ||
         RAND_bytes(token, LARGO_TOKEN) != 1 ||
@@ -315,6 +337,7 @@ static void autenticar(FILE *cliente, const char *usuario, const char *clave_hex
     strcpy(sesiones[i].usuario, usuario);
     strcpy(sesiones[i].rol, rol);
     sesiones[i].vence = ahora + TTL;
+    sesiones[i].vence_boot = ahora_boot + TTL;
     sesiones[i].en_uso = 1;
     a_hex(token, LARGO_TOKEN, token_hex);
     OPENSSL_cleanse(token, sizeof token);
@@ -368,7 +391,7 @@ static void validar(FILE *cliente, const char *token_hex)
 
     for (int i = 0; i < MAX_SESIONES; i++) {
         if (sesiones[i].en_uso && CRYPTO_memcmp(sesiones[i].hash_token, hash, LARGO_HASH) == 0) {
-            if (sesiones[i].vence <= time(NULL)) {
+            if (sesion_vencida(&sesiones[i])) {
                 sesiones[i].en_uso = 0;
                 registrar("validacion", sesiones[i].usuario, "vencida");
                 fprintf(cliente, "ERR vencida\n");

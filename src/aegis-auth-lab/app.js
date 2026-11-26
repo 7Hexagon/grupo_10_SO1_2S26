@@ -1,0 +1,7 @@
+﻿const $=id=>document.getElementById(id), message=t=>{$('message').textContent=t};
+async function request(path,data){const r=await fetch(path,{method:data?'POST':'GET',credentials:'same-origin',headers:data?{'Content-Type':'application/json'}:{},body:data?JSON.stringify(data):undefined,cache:'no-store'});const body=await r.json();if(!r.ok)throw Error(body.error||'Operación no disponible');return body}
+async function refresh(){try{const s=await request('/api/session');$('login-card').hidden=true;$('panel').hidden=false;$('user').textContent=s.usuario;$('role').textContent=s.rol;$('expiry').textContent=new Date(Number(s.vence_unix)*1000).toLocaleString();}catch(e){$('login-card').hidden=false;$('panel').hidden=true;}}
+$('login').addEventListener('submit',async e=>{e.preventDefault();const f=e.target;try{await request('/api/login',{usuario:f.usuario.value,clave:f.clave.value});f.clave.value='';message('Autenticación aceptada por aegisd.');await refresh()}catch(err){f.clave.value='';message(err.message)}});
+$('validate').addEventListener('click',async()=>{try{await request('/api/session');message('Credencial válida según aegisd.')}catch(e){message(e.message);await refresh()}});
+$('revoke').addEventListener('click',async()=>{try{const r=await request('/api/revoke',{});message(r.resultado);await refresh()}catch(e){message(e.message)}});
+$('logout').addEventListener('click',async()=>{try{const r=await request('/api/logout',{});message(r.resultado);await refresh()}catch(e){message(e.message)}});refresh();

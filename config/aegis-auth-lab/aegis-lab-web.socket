@@ -1,0 +1,11 @@
+[Unit]
+Description=Aegis Auth Lab Unix web socket
+[Socket]
+ListenStream=/run/aegis-web/http.sock
+SocketUser=aegislab
+SocketGroup=admin_aegis
+SocketMode=0660
+DirectoryMode=0755
+RemoveOnStop=yes
+[Install]
+WantedBy=sockets.target

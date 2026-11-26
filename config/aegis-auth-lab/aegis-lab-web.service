@@ -1,0 +1,24 @@
+[Unit]
+Description=Aegis Auth Lab Unix web backend
+Requires=aegis-lab-web.socket aegis-lab-relay.socket
+After=aegis-lab-web.socket aegis-lab-relay.socket aegisd.service
+[Service]
+Type=simple
+User=aegislab
+Group=aegislab
+WorkingDirectory=/opt/aegis-auth-lab
+ExecStart=/usr/bin/python3 /opt/aegis-auth-lab/app.py
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

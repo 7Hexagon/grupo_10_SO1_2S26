@@ -1,0 +1,43 @@
+Aegis Audit v1.1 — informe de seguridad
+Fecha:    2026-11-25 14:28:09 -0300
+Host:     aegis-auth
+Kernel:   7.1.8
+PID 1:    systemd
+Ejecutor: root
+Controles: 8 (6 del catálogo + 2 propios). La herramienta no modifica el sistema.
+======================================================================
+
+[PASS] CAT-IDN-01 — Única cuenta privilegiada
+    Evidencia:   cuentas con UID 0: root
+    Explicación: Solo root tiene privilegios totales.
+
+[PASS] CAT-IDN-02 — Sin contraseñas vacías
+    Evidencia:   17 cuentas en /etc/shadow, ninguna vacía
+    Explicación: Las cuentas tienen contraseña o están bloqueadas (!, *).
+
+[PASS] CAT-PER-01 — Archivos de identidad protegidos
+    Evidencia:   passwd=644 root:root; group=644 root:root; shadow=400 root:root; gshadow=400 root:root; 
+    Explicación: Los cuatro archivos pertenecen a root y no superan los permisos máximos.
+
+[PASS] CAT-PER-02 — Escritura global restringida
+    Evidencia:   ningún archivo ni directorio inseguro; /tmp y /var/tmp con 1777
+    Explicación: No hay escritura global injustificada.
+
+[PASS] CAT-SSH-01 — Root sin acceso remoto directo
+    Evidencia:   1 proceso(s) dropbear, todos con -w
+    Explicación: Dropbear rechaza el inicio de sesión directo de root.
+
+[FAIL] CAT-RED-01 — Puertos autorizados
+    Evidencia:   no autorizados: 127.0.0.1:8787(python3) | autorizados: 192.168.56.111:22:dropbear
+    Explicación: Hay puertos en escucha fuera de la lista, o en una IP o proceso distintos de los autorizados.
+
+[PASS] PROP-AEGIS-01 — Base de usuarios protegida
+    Evidencia:   dir 700 root, archivo 600 root, 3 cuenta(s) con sal y hash PBKDF2
+    Explicación: Solo el servicio accede a la base y no hay contraseñas en texto plano.
+
+[PASS] PROP-AEGIS-02 — Registro sin secretos
+    Evidencia:   permisos 600 root, 67 línea(s), ninguna con tokens ni hashes
+    Explicación: El servicio registra acción, usuario y resultado sin filtrar credenciales.
+
+======================================================================
+Resumen: PASS=7  FAIL=1  WARN=0

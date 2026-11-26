@@ -10,7 +10,7 @@ El funcionamiento, las medidas de seguridad y las limitaciones conocidas están 
 | --- | --- | --- | --- |
 | v1 | 16/11/2026 18:27 | Prototipo inicial. No validaba roles ni restringía la revocación | Reemplazada. Dejó la cuenta `lab_auditor` (rol `auditor`) en la base: ver `auditoria/postura-inicial.md` |
 | v2 | 16/11/2026 18:37 | Solo acepta los roles `administrador` y `operador`; solo un administrador puede revocar | Reemplazada; respaldo en `/root/aegisd-respaldo-v2-20261117` |
-| **v3** | **17/11/2026 22:39** | **Versión legible de la v2:** nombres y comentarios en español, una función por operación, constantes con nombre y sin el código muerto de `VALIDATE`. **Mismo comportamiento** | **Instalada en `/usr/sbin/aegisd`** |
+| **v3** | **17/11/2026 22:39** | **Versión legible de la v2:** nombres y comentarios en español, una función por operación, constantes con nombre y sin el código muerto de `VALIDATE`. **Mismo comportamiento** | Reemplazada el 26/11 por la corrección de vencimiento descrita abajo |
 
 ## Verificación de la v3
 
@@ -21,7 +21,7 @@ Antes de instalarla se compilaron la v2 y la v3 con un TTL de 2 segundos y se le
 - La base de usuarios tiene el mismo formato y los mismos permisos (directorio 700, archivo 600).
 - La v3 autentica correctamente a usuarios creados por la v2.
 
-## Hashes de lo instalado (17/11/2026)
+## Hashes históricos de la v3 instalada el 17/11/2026
 
 | Archivo | SHA-256 |
 | --- | --- |
@@ -51,3 +51,9 @@ Para volver atrás, se repiten los mismos pasos instalando el respaldo en lugar 
 ## Advertencias
 
 No guardar contraseñas, bases de usuarios ni tokens en el repositorio. La base (`/var/lib/aegisd/users`) y el registro (`/var/log/aegisd.log`) quedan solo en la VM.
+
+## Corrección del vencimiento — 26/11/2026
+
+La versión instalada compara los plazos con `CLOCK_BOOTTIME`, que incluye la suspensión y no retrocede al ajustar el reloj de calendario. `vence_unix` sigue siendo informativo para el cliente. El código v3 utilizaba `time(NULL)` para autorizar y un retroceso del reloj podía prolongar la validez. La regresión se reprodujo mediante una instancia aislada con el reloj de calendario simulado, sin alterar la hora de la VM. Con el código corregido el token venció; también pasaron las pruebas aisladas de autenticación, roles y revocación.
+
+El binario anterior se conserva en `/root/aegis-clock-backup-20261126-retry/aegisd-old`. Reiniciar el servicio invalida las credenciales que estén en memoria. La primera instalación se revirtió porque el control del socket se hizo antes de que el proceso lo creara; el segundo intento incorporó una espera acotada.

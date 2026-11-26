@@ -1,0 +1,16 @@
+[Match]
+MACAddress=08:00:27:56:b6:d6
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+DHCP=ipv4
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+
+[DHCPv4]
+UseDNS=no
+UseHostname=no
+UseNTP=no
+RouteMetric=1024

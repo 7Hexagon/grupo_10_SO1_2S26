@@ -45,3 +45,9 @@ Se aplicó hardening y `aegis-audit` v1.1 verificó ocho controles: PASS=8, FAIL
 **Limitaciones:** la causa del kernel panic anterior no se determinó. La sesión gráfica se probó como root local; falta comprobarla después de un reinicio y como usuario sin privilegios. La entrada de recuperación de GRUB aún no se probó desde el disco. No se demostró estabilidad prolongada con red y entorno gráfico. El sistema todavía no representa el cumplimiento completo de todos los requisitos originales.
 
 El código del servicio está en `src/aegisd/`; las configuraciones en `config/`, las auditorías en `auditoria/`, las capturas en `evidencias/` y el historial en `diario.md`. No se incluyen discos, ISO, credenciales ni bases de usuarios.
+
+## Avance del 26/11/2026
+
+Aegis Auth Lab utiliza el `aegisd` real mediante un puente local restringido. La web corre sin privilegios y utiliza un socket Unix; desde Windows se accede por un proxy local sobre SSH. Se comprobaron autenticación, roles y rechazo de operaciones no autorizadas, también después de reiniciar. La auditoría v1.1 registró 8 PASS, 0 FAIL y 0 WARN con la aplicación activa. Las pruebas y limitaciones están en `config/aegis-auth-lab/README.md`.
+
+El vencimiento de aegisd se corrigió para usar `CLOCK_BOOTTIME` ante ajustes del reloj. La divergencia horaria inicial observada al arrancar sigue sin causa determinada. La aplicación no está publicada en Internet.
