@@ -51,3 +51,7 @@ El código del servicio está en `src/aegisd/`; las configuraciones en `config/`
 Aegis Auth Lab utiliza el `aegisd` real mediante un puente local restringido. La web corre sin privilegios y utiliza un socket Unix; desde Windows se accede por un proxy local sobre SSH. Se comprobaron autenticación, roles y rechazo de operaciones no autorizadas, también después de reiniciar. La auditoría v1.1 registró 8 PASS, 0 FAIL y 0 WARN con la aplicación activa. Las pruebas y limitaciones están en `config/aegis-auth-lab/README.md`.
 
 El vencimiento de aegisd se corrigió para usar `CLOCK_BOOTTIME` ante ajustes del reloj. La divergencia horaria inicial observada al arrancar sigue sin causa determinada. La aplicación no está publicada en Internet.
+
+## Entrega local
+
+La demostracion y la matriz de evidencias estan en [docs/entrega-local.md](docs/entrega-local.md). El acceso web se limita a Windows local mediante proxy SSH; no se habilita publicacion externa. La lista de requisitos de la consigna aun requiere cotejo con el PDF oficial vigente.

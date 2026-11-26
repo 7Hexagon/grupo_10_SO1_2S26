@@ -114,3 +114,7 @@ Tras reiniciar, systemd informó `running`, la aplicación y sus sockets iniciar
 ## Actualizacion visual de Aegis Auth Lab
 
 Se prepararon dos recursos estaticos y un instalador con respaldo y verificacion SHA-256. El usuario informo INSTALACION_STATIC_PASS y confirmo en Chrome autenticacion de administrador y operador, validacion, revocacion administrativa y rechazo del operador con ERR permiso. No se modificaron aegisd ni las unidades. El usuario informo que la auditoria v1.1 posterior dio PASS=8, FAIL=0, WARN=0 el 26/11/2026 a las 16:36:27, sin modificar controles; informe en la VM: `/root/aegis-audit-aegis-auth-20261126-163627.txt`. Respaldo: `/root/aegis-static-backup-c71294f006e34cf695589ee4972d7050`. La revision especifica de pantalla pequena, foco de teclado y consola JavaScript queda pendiente.
+
+## Cierre de alcance local
+
+Se descarto el candidato de publicacion externa y se conservaron las validaciones locales del proxy. El usuario comunico que la version candidata funciono en Chrome con autenticacion real y rechazo de revocacion de operador; despues se retiro el codigo exclusivo de HTTPS, por lo que la version final simplificada requiere repeticion en Chrome. Las pruebas simuladas locales no sustituyen pruebas en la VM. Ver `docs/entrega-local.md`.
