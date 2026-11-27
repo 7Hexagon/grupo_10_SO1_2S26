@@ -118,3 +118,7 @@ Se prepararon dos recursos estaticos y un instalador con respaldo y verificacion
 ## Cierre de alcance local
 
 Se descarto el candidato de publicacion externa y se conservaron las validaciones locales del proxy. El usuario comunico que la version candidata funciono en Chrome con autenticacion real y rechazo de revocacion de operador; despues se retiro el codigo exclusivo de HTTPS, por lo que la version final simplificada requiere repeticion en Chrome. Las pruebas simuladas locales no sustituyen pruebas en la VM. Ver `docs/entrega-local.md`.
+
+## Evidencias de Aegis Auth Lab para la entrega
+
+El usuario recupero el informe historico del 26/11/2026 a las 16:36:27 y aporto cinco capturas de la aplicacion. La copia `auditoria/aegis-lab/aegis-audit-entrega-20261126.txt` contiene ocho PASS, sin FAIL ni WARN; su SHA-256 local coincide con el valor del original comunicado por el usuario. Se revisaron las capturas y se documentaron los resultados en `docs/plan-evidencias-lab.md`; no se repitio la auditoria ni se volvieron a ejecutar las operaciones durante la revision.

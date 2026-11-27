@@ -61,12 +61,14 @@ Ante fallo del navegador, detener el proxy con Ctrl+C, comprobar `Get-NetTCPConn
 | Servicios, SSH y root restringido | `diario.md`, `config/hardening/acceso-ssh.md`, `config/aegis-auth-lab/README.md` | Evidencias historicas; repetir en defensa |
 | Host-only, NAT, DNS e Internet | `diario.md` avance 25/11, `config/aegis-auth-lab/README.md` | Historico; verificar conectividad antes de defensa |
 | Xorg, Fluxbox, xterm | `config/xorg-minimo/README.md`, `evidencias/parte1/xorg-20261120/fluxbox-xterm.png` | 20/11, root local; sin prueba registrada como usuario no privilegiado |
-| Autenticacion, validacion, roles y revocacion | `src/aegisd/README.md`, `config/aegis-auth-lab/README.md`; pruebas en Chrome comunicadas por el usuario | Confirmacion del usuario, no repetida en esta sesion |
+| Autenticacion, validacion, roles y revocacion | `src/aegisd/README.md`, `config/aegis-auth-lab/README.md` y cinco capturas en `evidencias/parte2/aegis-auth-lab/` | Capturas aportadas por el usuario; no se repitio la prueba durante su revision |
 | Vencimiento y salto de reloj | `pruebas/aegis-auth-lab/test-clock-isolated.py`, `src/aegisd/README.md` | Prueba aislada historica; no repetir contra datos reales |
-| Auditoria ocho controles | `auditoria/aegis-lab/socket-unix-reinicio-20261126.txt`, `controles/fichas-controles.md` | Informe 16:36:27 en `/root/aegis-audit-aegis-auth-20261126-163627.txt` comunicado por usuario, no copiado ni verificado independientemente |
+| Auditoria ocho controles | `auditoria/aegis-lab/aegis-audit-entrega-20261126.txt`, `auditoria/aegis-lab/socket-unix-reinicio-20261126.txt`, `controles/fichas-controles.md` | Ejecucion historica 26/11 a las 16:36:27; SHA-256 local coincide con el original segun el usuario |
 | Proxy reforzado | `src/aegis-auth-lab/test_windows_ssh_proxy.py` | Pruebas simuladas; Chrome confirmado por usuario antes de retirar codigo HTTPS; repetir con version final |
 | Plan de pruebas por ID y evidencia, informe unificado, manual reproducible | Esta matriz y documentos enlazados | Son un inicio: faltan procedimientos, resultados obtenidos y evidencia trazable por cada requisito del PDF |
 | Operaciones systemd, recursos graficos, estabilidad prolongada y desafio de auditoria | Ver documentacion anterior | No se dispone aqui de evidencia completa; no afirmar cumplimiento |
 | Entrada de recuperacion GRUB, sesion grafica sin privilegios, causa del panic y divergencia del reloj | `config/systemd-experimental/README.md`, `config/xorg-minimo/README.md`, `diario.md` | Pendientes o causas desconocidas |
 
 Revisar tambien snapshot previsto para el desafio de auditoria, duracion y reglas de defensa, integrantes y fecha contra la consigna vigente. No alterar el sistema o sus controles para mejorar el resultado.
+
+El plan y los resultados de las cinco capturas de Chrome y del informe historico figuran en `docs/plan-evidencias-lab.md`. El informe y las imagenes fueron aportados por el usuario y revisados; no se realizo una nueva auditoria ni se repitieron las operaciones durante esa revision.
